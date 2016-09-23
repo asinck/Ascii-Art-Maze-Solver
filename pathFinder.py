@@ -306,11 +306,6 @@ def aStar():
     def solve(queue):
         while (len(queue) > 0):
             item = heapq.heappop(queue)
-            #colorSpot(item.node, forward)
-            # try: #color the parent, if there was one
-            #     colorSpot(node.path[-2], path) #-2 because -1 is itself
-            # except:
-            #     pass
             time.sleep(maze.moveTime)
             if maze.isGoal(item.node):
                 colorSpot(item.node, forward)
@@ -320,8 +315,6 @@ def aStar():
                 if ((len(children) == 1) or \
                     all((child in dejavu) for child in children)):
                     colorSpot(item.node, back)
-                # else:
-                #     colorSpot(item.node, path)
                 for child in children:
                     if (child not in dejavu):
                         if maze.isGoal(child):
@@ -331,6 +324,72 @@ def aStar():
                         cost = item.cost + 1 #+1 because all steps cost 1
                         hcost = item.cost + heuristic(child)
                         node = Node(child, cost, hcost)
+                        node.path = item.path + [child]
+                        colorSpot(child, forward)
+                        colorSpot(item.node, path)
+                        heapq.heappush(queue, node)
+
+    solution = solve([startNode])
+    if (len(solution) > 0):
+        colorSpot(start, success)
+        for spot in solution:
+            time.sleep(maze.moveTime/2.0)
+            colorSpot(spot, success)
+
+#This is like A* with path costs of 0 (that is to say, only the
+#heuristic matters).
+def closest():
+    if (maze == None):
+        return
+
+    import time, heapq
+
+    resetMaze()
+    
+    class Node:
+        def __init__(self, _node, _hcost):
+            self.path = []
+            self.node = _node
+            self.hcost = _hcost
+            
+        #this is for sorting
+        def __lt__(self, other):
+            return self.hcost < other.hcost
+
+        
+    dejavu = []
+    start = (1, 1)
+
+    global path, forward, back
+
+    colorSpot(start, forward)
+
+    #if we're done, then we're done
+    if (maze.isGoal(start)):
+        return
+
+    heuristic = maze.manHeuristic
+    startNode = Node(start, heuristic(start))
+
+    def solve(queue):
+        while (len(queue) > 0):
+            item = heapq.heappop(queue)
+            time.sleep(maze.moveTime)
+            if maze.isGoal(item.node):
+                colorSpot(item.node, forward)
+                return item.path
+            else:
+                children = maze.getValidMoves(item.node)
+                if ((len(children) == 1) or \
+                    all((child in dejavu) for child in children)):
+                    colorSpot(item.node, back)
+                for child in children:
+                    if (child not in dejavu):
+                        if maze.isGoal(child):
+                            return item.path + [child]
+
+                        dejavu.append(child)
+                        node = Node(child, heuristic(child))
                         node.path = item.path + [child]
                         colorSpot(child, forward)
                         colorSpot(item.node, path)
@@ -457,12 +516,14 @@ loadButton = Button(controlPanel, text="Load...", command = lambda: openMaze())
 dfsButton = Button(controlPanel, text="DFS", command = lambda: dfs())
 bfsButton = Button(controlPanel, text="BFS", command = lambda: bfs())
 aStarButton = Button(controlPanel, text="A*", command = lambda: aStar())
+closestButton = Button(controlPanel, text="Closest", command = lambda: closest())
 controlPanel.pack(side=TOP)
 #toggleDisplayButton.pack(side=LEFT) #this isn't ready
 loadButton.pack(side=LEFT)
 dfsButton.pack(side=LEFT)
 bfsButton.pack(side=LEFT)
 aStarButton.pack(side=LEFT)
+closestButton.pack(side=LEFT)
 
 #this is the frame for the maze display
 mazeFrame = Frame(mainframe)
