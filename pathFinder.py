@@ -171,6 +171,8 @@ def dfs():
     if (maze == None):
         return
 
+    import time
+
     resetMaze()
     #a list of positions visited already
     dejavu = []
@@ -185,30 +187,51 @@ def dfs():
     if (maze.isGoal(start)):
         return
 
-    import time
-    #this is the recursive DFS function
-    def solve(position):
-        
-        moves = maze.getValidMoves(position)
-        colorSpot(position, path)
-        #time.sleep(maze.moveTime)
-        for move in moves:
-            found = False
-            if move not in dejavu:
-                dejavu.append(move)
-                colorSpot(move, forward)
-                time.sleep(maze.moveTime)
-                if maze.isGoal(move):
-                    return True
-                else:
-                    if (solve(move)):
-                        return True
-                colorSpot(move, back)
-                time.sleep(maze.moveTime)
-        return False
 
-    #call the recursive function
-    solve(start)
+
+    # #this is the recursive DFS function
+    # def solve(position):
+    #     moves = maze.getValidMoves(position)
+    #     colorSpot(position, path)
+    #     #time.sleep(maze.moveTime)
+    #     for move in moves:
+    #         found = False
+    #         if move not in dejavu:
+    #             dejavu.append(move)
+    #             colorSpot(move, forward)
+    #             time.sleep(maze.moveTime)
+    #             if maze.isGoal(move):
+    #                 return True
+    #             else:
+    #                 if (solve(move)):
+    #                     return True
+    #             colorSpot(move, back)
+    #             time.sleep(maze.moveTime)
+    #     return False
+
+    queue = [start]
+    
+    while (len(queue) > 0):
+        node = queue[-1]
+        queue = queue[:-1]
+        time.sleep(maze.moveTime)
+        colorSpot(node, forward)
+        if (maze.isGoal(node)):
+            return
+        else:
+            colorSpot(node, path)
+            moves = maze.getValidMoves(node)[::-1]
+            if (len(moves) == 1):
+                time.sleep(maze.moveTime)
+                colorSpot(node, back)
+            for move in moves:
+                if move not in dejavu:
+                    dejavu.append(move)
+                    queue.append(move)
+                    
+
+    # #call the recursive function
+    # solve(start)
 
 
 def bfs():
