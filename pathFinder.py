@@ -45,6 +45,11 @@ success = "#550055"
 #this holds the text representation of the maze. It can work with the
 #text to decide legal moves, where the goal position is, etc.
 class mazeText():
+
+###########################################################################
+##  Maze Text Initialization
+###########################################################################
+
     #initialize the maze
     def __init__(self, fileName):
         self.maze = []
@@ -64,7 +69,22 @@ class mazeText():
             self.width = len(self.maze[0])
             self.moveTime = 1.0/((self.width + self.height)/2.0)
         
+        self.start = (1, 1)
+        self.goal = (self.width-1, self.height-1)
 
+    #this sets a custom position for the start
+    def setStartPosition(self, (x, y)):
+        if (validPosition((x, y)) and self.maze[y][x] != "|"):
+            self.start = (x, y)
+
+    #this sets a custom position for the end
+    def setGoalPosition(self, (x, y)):
+        if (validPosition((x, y)) and self.maze[y][x] != "|"):
+            self.goal = (x, y)
+    
+###########################################################################
+##  Maze Text Game Solving
+###########################################################################
 
     #this gets the valid moves from a position
     def getValidMoves(self, (x, y)):
@@ -78,8 +98,7 @@ class mazeText():
         
         #note also that arrays and strings are 0 based, but self.width
         #and self.height are not
-        
-        if (x >= self.width or y >= self.height or x <= 0 or y <= 0):
+        if (not self.validPosition((x, y))):
             return []
         else:
             moves = []
@@ -100,7 +119,6 @@ class mazeText():
             if (N != "_" and N != "|"):
                 moves.append((x, y-1))
 
-            # print "moves from", (x, y), ":", moves
             return moves
 
     #this gets all the characters in the area
@@ -124,54 +142,63 @@ class mazeText():
         N = self.maze[y-1][x]
 
         return (current, N, S, E, W)
+    
+###########################################################################
+##  Maze Text Helper and info functions
+###########################################################################
 
+    #this returns if the given position is a valid one
+    def validPosition(self, (x, y)):
+        return (not (x >= self.width or y >= self.height or \
+                     x <= 0 or y <= 0))
+
+    #return if the position is the goal
+    def isGoal(self, (x, y)):
+        return (x == self.width-1 and y == self.height-1)
+
+    #return the position of the start
+    def getStartPosition(self):
+        return self.start
+
+    #return the position of the goal
+    def getGoalPosition(self):
+        return self.goal
+
+    #return a text representation of the maze
+    def getText(self):
+        return "\n".join(self.maze)
+
+###########################################################################
+##  Maze Text Heuristics
+###########################################################################
 
     #return the manhattan distance to the goal
     def manHeuristic(self, (x, y)):
         (goalX, goalY) = self.getGoalPosition()
         return abs(goalX - x) + abs(goalY - y)
 
+    #return the euclidean heuristic the goal
+    #I'm not sure this is useful given the manhattan heuristic, but
+    #it's here because it could be and when it becomes useful it'll
+    #already be here.
     def eucHeuristic(self, (x, y)):
         import math
         (goalX, goalY) = self.getGoalPosition()
         return math.sqrt(math.pow((goalX - x), 2) + math.pow((goalY - y), 2))
-    
-    #return if the position is the goal
-    def isGoal(self, (x, y)):
-        return (x == self.width-1 and y == self.height-1)
 
-    #return the position of the goal
-    def getGoalPosition(self):
-        return (self.width-1, self.height-1)
 
-    #return a text representation of the maze
-    def getText(self):
-        return "\n".join(self.maze)
-
-    
+###########################################################################
+##  Program helper functions
+###########################################################################
+        
 #notDone will give a message saying that that feature is not complete
 def notDone(var=None):
     tkMessageBox.showinfo("Not Ready", "This feature is not complete yet.")
 
 
-#this colors the spot at the given coordinates to be the given color
-def colorSpot((x, y), color):
-    global graphical
-    if (graphical):
-        # xposition = 20
-        # yposition = 5
-        # xoffset = 8#-(((maze.width-x)/(maze.width*1.0))*9)
-        # yoffset = 16# - (((maze.height-y)/(maze.height*1.0))*16)
-        # mazeCanvas.create_oval((x*xoffset)+xposition, (y*yoffset)+yposition, (x*xoffset)+10+xposition, (y*yoffset)+10+yposition, fill=color)
-        # root.update_idletasks()
-        pass
-    else:
-        #note: I adjusted the position of coloring because scrolled text
-        #lines begin at 1 but characters at 0
-        mazeDisplay.tag_delete("(%d,%d)" %(x, y))
-        mazeDisplay.tag_add("(%d,%d)" %(x, y), "%d.%d" %(y+1, x), "%d.%d+1c" %(y+1, x))
-        mazeDisplay.tag_config("(%d,%d)" %(x, y), background=color)
-        root.update_idletasks()
+###########################################################################
+##  Program search functions
+###########################################################################
 
 #this does a dfs of the maze for the solution
 def dfs():
@@ -185,7 +212,7 @@ def dfs():
 
     #a list of positions visited already
     dejavu = []
-    start = (1, 1)
+    start = maze.getStartPosition()
     colorSpot(start, forward)
     
     queue = [start]
@@ -226,7 +253,7 @@ def bfs():
             self.node = _node
 
     dejavu = []
-    start = (1, 1)
+    start = maze.getStartPosition()
     colorSpot(start, forward)
 
     startNode = Node(start)
@@ -297,7 +324,7 @@ def aStar():
 
         
     dejavu = []
-    start = (1, 1)
+    start = maze.getStartPosition()
 
     global path, forward, back
 
@@ -365,7 +392,7 @@ def closest():
 
         
     dejavu = []
-    start = (1, 1)
+    start = maze.getStartPosition()
 
     global path, forward, back
 
@@ -408,6 +435,59 @@ def closest():
         for spot in solution:
             time.sleep(maze.moveTime/2.0)
             colorSpot(spot, success)
+
+###########################################################################
+##  Program draw functions
+###########################################################################
+
+#this colors the spot at the given coordinates to be the given color
+def colorSpot((x, y), color):
+    global graphical
+    if (graphical):
+        # xposition = 20
+        # yposition = 5
+        # xoffset = 8#-(((maze.width-x)/(maze.width*1.0))*9)
+        # yoffset = 16# - (((maze.height-y)/(maze.height*1.0))*16)
+        # mazeCanvas.create_oval((x*xoffset)+xposition, (y*yoffset)+yposition, (x*xoffset)+10+xposition, (y*yoffset)+10+yposition, fill=color)
+        # root.update_idletasks()
+        pass
+    else:
+        #note: I adjusted the position of coloring because scrolled text
+        #lines begin at 1 but characters at 0
+        mazeDisplay.tag_delete("(%d,%d)" %(x, y))
+        mazeDisplay.tag_add("(%d,%d)" %(x, y), "%d.%d" %(y+1, x), "%d.%d+1c" %(y+1, x))
+        mazeDisplay.tag_config("(%d,%d)" %(x, y), background=color)
+        root.update_idletasks()
+
+#this resets the maze to the unsolved state
+def resetMaze():
+    global maze
+    if maze == None:
+        return
+    global graphical
+    if (graphical):
+        pass
+    else:
+        mazeDisplay.config(state=NORMAL)
+        mazeDisplay.delete("0.0", END)
+        mazeDisplay.insert("0.0", maze.getText())
+        mazeDisplay.config(state=DISABLED)
+        global forward
+        colorSpot((maze.getGoalPosition()), forward)
+
+#this toggles if the ascii or the canvas representation of the maze is
+#shown.
+def toggleDisplay():
+    global graphical
+    if (graphical):
+        mazeDisplay.pack(expand=YES, fill=BOTH)
+        mazeCanvas.pack_forget()
+        graphical = False
+    else:
+        mazeDisplay.pack_forget()
+        mazeCanvas.pack(expand=YES, fill=BOTH)
+        graphical = True
+    resetMaze()
 
 #this draws the initial maze
 def drawMaze():
@@ -462,7 +542,9 @@ def drawMaze():
         # mazeCanvas.create_line((maze.width*charsize)/2, 10, (maze.width*charsize)/2, (maze.height*charsize)+10, width=2)
         # mazeCanvas.create_line(15, (maze.height*charsize)+10, (maze.width*charsize)/2, (maze.height*charsize)+10, width=2)
     
-    
+###########################################################################
+##  Program file processing functions
+###########################################################################
 
 #this opens a text file for a maze
 def openMaze():
@@ -474,38 +556,10 @@ def openMaze():
         global forward
         colorSpot((maze.getGoalPosition()), forward)
 
-        
-#this resets the maze to the unsolved state
-def resetMaze():
-    global maze
-    if maze == None:
-        return
-    global graphical
-    if (graphical):
-        pass
-    else:
-        mazeDisplay.config(state=NORMAL)
-        mazeDisplay.delete("0.0", END)
-        mazeDisplay.insert("0.0", maze.getText())
-        mazeDisplay.config(state=DISABLED)
-        global forward
-        colorSpot((maze.getGoalPosition()), forward)
 
-
-#this toggles if the ascii or the canvas representation of the maze is
-#shown.
-def toggleDisplay():
-    global graphical
-    if (graphical):
-        mazeDisplay.pack(expand=YES, fill=BOTH)
-        mazeCanvas.pack_forget()
-        graphical = False
-    else:
-        mazeDisplay.pack_forget()
-        mazeCanvas.pack(expand=YES, fill=BOTH)
-        graphical = True
-    resetMaze()
-
+###########################################################################
+##  Program GUI setup
+###########################################################################
 
 #gui setup
 root = Tk()
