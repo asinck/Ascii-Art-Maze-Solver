@@ -182,15 +182,18 @@ def dfs():
     colorSpot(start, forward)
     
     queue = [start]
-    
+
+    node = prevNode = start
     while (len(queue) > 0):
+        prevNode = node
         node = queue.pop()
-        time.sleep(maze.moveTime)
         colorSpot(node, forward)
+        if (mazeDisplay.tag_cget("(%d,%d)" %prevNode, "background") != back):
+            colorSpot(prevNode, path)
+        time.sleep(maze.moveTime)
         if (maze.isGoal(node)):
             return
         else:
-            colorSpot(node, path)
             moves = maze.getValidMoves(node)[::-1]
             if (len(moves) == 1):
                 time.sleep(maze.moveTime)
@@ -303,16 +306,22 @@ def aStar():
     def solve(queue):
         while (len(queue) > 0):
             item = heapq.heappop(queue)
-            colorSpot(item.node, forward)
+            #colorSpot(item.node, forward)
+            # try: #color the parent, if there was one
+            #     colorSpot(node.path[-2], path) #-2 because -1 is itself
+            # except:
+            #     pass
             time.sleep(maze.moveTime)
             if maze.isGoal(item.node):
+                colorSpot(item.node, forward)
                 return item.path
             else:
                 children = maze.getValidMoves(item.node)
-                if (len(children) == 1): # there will always be at least one: the parent
+                if ((len(children) == 1) or \
+                    all((child in dejavu) for child in children)):
                     colorSpot(item.node, back)
-                else:
-                    colorSpot(item.node, path)
+                # else:
+                #     colorSpot(item.node, path)
                 for child in children:
                     if (child not in dejavu):
                         if maze.isGoal(child):
@@ -323,6 +332,8 @@ def aStar():
                         hcost = item.cost + heuristic(child)
                         node = Node(child, cost, hcost)
                         node.path = item.path + [child]
+                        colorSpot(child, forward)
+                        colorSpot(item.node, path)
                         heapq.heappush(queue, node)
 
     solution = solve([startNode])
@@ -394,7 +405,8 @@ def openMaze():
         global maze
         maze = mazeText(fileName)
         drawMaze()
-        colorSpot((maze.getGoalPosition()), "#0F0")
+        global forward
+        colorSpot((maze.getGoalPosition()), forward)
 
         
 #this resets the maze to the unsolved state
@@ -410,7 +422,8 @@ def resetMaze():
         mazeDisplay.delete("0.0", END)
         mazeDisplay.insert("0.0", maze.getText())
         mazeDisplay.config(state=DISABLED)
-        colorSpot((maze.getGoalPosition()), "#0F0")
+        global forward
+        colorSpot((maze.getGoalPosition()), forward)
 
 
 #this toggles if the ascii or the canvas representation of the maze is
