@@ -40,7 +40,7 @@ graphical = False
 path = "#009900"
 forward = "#000099"
 back = "#990000"
-BFSsuccess = "#550055"
+success = "#550055"
 
 #this holds the text representation of the maze. It can work with the
 #text to decide legal moves, where the goal position is, etc.
@@ -168,52 +168,23 @@ def colorSpot((x, y), color):
 
 #this does a dfs of the maze for the solution
 def dfs():
-    if (maze == None):
+    if (maze == None or maze.isGoal((1, 1))):
         return
 
     import time
-
+    global path, forward, back
+    
     resetMaze()
+
     #a list of positions visited already
     dejavu = []
-    
     start = (1, 1)
-    
-    global path, forward, back
-
     colorSpot(start, forward)
     
-    #if we're done, then we're done
-    if (maze.isGoal(start)):
-        return
-
-
-
-    # #this is the recursive DFS function
-    # def solve(position):
-    #     moves = maze.getValidMoves(position)
-    #     colorSpot(position, path)
-    #     #time.sleep(maze.moveTime)
-    #     for move in moves:
-    #         found = False
-    #         if move not in dejavu:
-    #             dejavu.append(move)
-    #             colorSpot(move, forward)
-    #             time.sleep(maze.moveTime)
-    #             if maze.isGoal(move):
-    #                 return True
-    #             else:
-    #                 if (solve(move)):
-    #                     return True
-    #             colorSpot(move, back)
-    #             time.sleep(maze.moveTime)
-    #     return False
-
     queue = [start]
     
     while (len(queue) > 0):
-        node = queue[-1]
-        queue = queue[:-1]
+        node = queue.pop()
         time.sleep(maze.moveTime)
         colorSpot(node, forward)
         if (maze.isGoal(node)):
@@ -228,17 +199,17 @@ def dfs():
                 if move not in dejavu:
                     dejavu.append(move)
                     queue.append(move)
-                    
 
-    # #call the recursive function
-    # solve(start)
-
-
+#this is a breadth first search of the maze
 def bfs():
-    if (maze == None):
+    if (maze == None or maze.isGoal((1, 1))):
         return
-    resetMaze()
+
+    import time
+    global path, forward, back
     
+    resetMaze()
+
     class Node:
         def __init__(self, _node):
             self.path = []
@@ -246,56 +217,51 @@ def bfs():
 
     dejavu = []
     start = (1, 1)
-
-    global path, forward, back
-
     colorSpot(start, forward)
 
-    #if we're done, then we're done
-    if (maze.isGoal(start)):
-        return
-
     startNode = Node(start)
-    import time
-    def solve(queue):
-        time.sleep(maze.moveTime)
-        #time.sleep(maze.moveTime)
-        nextLevel = []
-        
-        if (len(queue) == 0):
-            return []
-        for position in queue:
-            colorSpot(position.node, path)
-            #check if goal
-            if maze.isGoal(position.node):
-                return position.path
-            else:
-                
-                #Go through the children of the current node, and for
-                #each one, check if it's been visited. If not, add it
-                #to the array of nodes that need to be checked the
-                #next pass.
-                children = maze.getValidMoves(position.node)
-                if (len(children) == 1): # there will always be at least one: the parent
-                    colorSpot(position.node, back)
-                for child in children:
-                    if (child not in dejavu):
-                        dejavu.append(child)
-                        colorSpot(child, forward)
-                        node = Node(child)
-                        node.path = position.path + [child]
-                        if maze.isGoal(child):
-                            return node.path
-                        nextLevel.append(node)
-        return solve(nextLevel)
+    
+    queue = [startNode]
+    solution = []
 
-    dejavu.append(start)
-    solution = solve([startNode])
+    while (len(queue) > 0):
+        node = queue.pop(0)
+        colorSpot(node.node, forward)
+        try: #color the parent, if there was one
+            colorSpot(node.path[-2], path) #-2 because -1 is itself
+        except:
+            pass
+        
+        time.sleep(maze.moveTime)
+        if (maze.isGoal(node.node)):
+            solution = node.path
+            queue = []
+        else:
+            #get the possible moves, but in reverse order because
+            #we're using a queue and need to insert them in the
+            #opposite order they're returned
+            moves = maze.getValidMoves(node.node)[::-1]
+            #If there is only one move, it's the parent and we're at a
+            #dead end. If all the possible moves have already been
+            #visited, then we're done in this branch.
+            if ((len(moves) == 1) or \
+                all((move in dejavu) for move in moves)):
+                colorSpot(node.node, back)
+            for move in moves:
+                if move not in dejavu:
+                    dejavu.append(move)
+                    newNode = Node(move)
+                    newNode.path = node.path + [move]
+                    queue.append(newNode)
+
+
+    # dejavu.append(start)
+    # solution = solve([startNode])
     if (len(solution) > 0):
-        colorSpot(start, BFSsuccess)
+        colorSpot(start, success)
         for spot in solution:
             time.sleep(maze.moveTime/2.0)
-            colorSpot(spot, BFSsuccess)
+            colorSpot(spot, success)
 
 def aStar():
     if (maze == None):
@@ -361,10 +327,10 @@ def aStar():
 
     solution = solve([startNode])
     if (len(solution) > 0):
-        colorSpot(start, BFSsuccess)
+        colorSpot(start, success)
         for spot in solution:
             time.sleep(maze.moveTime/2.0)
-            colorSpot(spot, BFSsuccess)
+            colorSpot(spot, success)
 
 #this draws the initial maze
 def drawMaze():
