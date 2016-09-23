@@ -83,23 +83,7 @@ class mazeText():
             return []
         else:
             moves = []
-            #North: y+1, x
-            #East:  y, x+1
-            #South: y-1, x
-            #West:  y, x-1
-
-            #return in order South, East, West, North, because I'm
-            #assuming the path will start in the top left corner and
-            #go to the bottom right corner
-            current = self.maze[y][x]
-            S = "|"
-            if (y < self.height-1):
-                S = self.maze[y+1][x]
-            E = "|"
-            if (x < self.width-1):
-                E = self.maze[y][x+1]
-            W = self.maze[y][x-1]
-            N = self.maze[y-1][x]
+            (current, N, S, E, W) = self.lookAround((x, y))
             #now that we've gotten the definitions all sewn up, do
             #position checks
 
@@ -118,6 +102,29 @@ class mazeText():
 
             # print "moves from", (x, y), ":", moves
             return moves
+
+    #this gets all the characters in the area
+    def lookAround(self, (x, y)):
+        #North: y+1, x
+        #South: y-1, x
+        #East:  y, x+1
+        #West:  y, x-1
+        
+        #return in order South, East, West, North, because I'm
+        #assuming the path will start in the top left corner and
+        #go to the bottom right corner
+        current = self.maze[y][x]
+        S = "|"
+        if (y < self.height-1):
+            S = self.maze[y+1][x]
+        E = "|"
+        if (x < self.width-1):
+            E = self.maze[y][x+1]
+        W = self.maze[y][x-1]
+        N = self.maze[y-1][x]
+
+        return (current, N, S, E, W)
+
 
     #return the manhattan distance to the goal
     def manHeuristic(self, (x, y)):
